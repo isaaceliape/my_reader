@@ -66,9 +66,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CORE-01 | Phase 1 | Pending |
-| CORE-02 | Phase 1 | Pending |
-| CORE-03 | Phase 1 | Pending |
+| CORE-01 | Phase 3 | Pending |
+| CORE-02 | Phase 3 | Pending |
+| CORE-03 | Phase 2 | Pending |
 | CORE-04 | Phase 2 | Pending |
 | CORE-05 | Phase 2 | Pending |
 | CORE-06 | Phase 2 | Pending |
@@ -79,7 +79,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UX-02 | Phase 3 | Pending |
 | UX-03 | Phase 3 | Pending |
 | UX-04 | Phase 1 | Pending |
-| TECH-01 | Phase 1 | Pending |
+| TECH-01 | Phase 4 | Pending |
 | TECH-02 | Phase 1 | Pending |
 | TECH-03 | Phase 1 | Pending |
 
@@ -87,6 +87,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v1 requirements: 16 total
 - Mapped to phases: 16
 - Unmapped: 0 ✓
+
+**Phase Assignment Summary:**
+- **Phase 1** (Core TTS Engine): 8 requirements — TTS engine setup, local processing, voice quality
+- **Phase 2** (Web API): 5 requirements — Audio generation, playback controls, download
+- **Phase 3** (Frontend): 5 requirements — Interface, keyboard shortcuts, voice selection
+- **Phase 4** (Optimization): 1 requirement — Hardware validation and performance optimization
 
 ---
 *Requirements defined: 2025-03-06*
