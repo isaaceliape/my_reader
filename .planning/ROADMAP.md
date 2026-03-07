@@ -51,6 +51,19 @@ This roadmap delivers a local-first text-to-speech web application in 4 phases. 
 - Basic text→audio pipeline with preprocessing
 - MPS/CPU device detection with automatic fallback
 
+**Plans:** 3 plans in 3 waves
+
+| Wave | Plans | Description |
+|------|-------|-------------|
+| 1 | 01 | Project setup, device detection, voice manager |
+| 2 | 02 | Text preprocessing, TTS service singleton |
+| 3 | 03 | Audio generation, integration testing |
+
+Plan Files:
+- [ ] `01-core-tts-engine-model-setup-01-PLAN.md` — Setup + Device + Voices
+- [ ] `01-core-tts-engine-model-setup-02-PLAN.md` — Preprocessing + Service
+- [ ] `01-core-tts-engine-model-setup-03-PLAN.md` — Generator + Testing
+
 ---
 
 ### Phase 2: Web API & Audio Streaming
