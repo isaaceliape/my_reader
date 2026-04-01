@@ -241,12 +241,13 @@ async def url_to_audio(
 
         if article is None:
             # Determine appropriate status code based on error
-            if "authentication" in error.lower() or "blocking" in error.lower():
+            error_lower = (error or "").lower()
+            if "authentication" in error_lower or "blocking" in error_lower:
                 raise HTTPException(status_code=403, detail=error)
-            elif "timeout" in error.lower():
+            elif "timeout" in error_lower:
                 raise HTTPException(status_code=504, detail=error)
             else:
-                raise HTTPException(status_code=400, detail=error)
+                raise HTTPException(status_code=400, detail=error or "Unknown error")
 
         # Generate audio from extracted text
         if not article.text or len(article.text.strip()) == 0:
