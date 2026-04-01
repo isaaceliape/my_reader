@@ -1,7 +1,7 @@
 # Phase 1 Research: Core TTS Engine & Model Setup
 
 **Phase:** 1 - Core TTS Engine & Model Setup  
-**Researched:** 2026-03-07 (derived from project research)  
+**Researched:** 2026-03-07 (updated)  
 **Confidence:** HIGH
 
 ---
@@ -21,15 +21,20 @@ Answer: "What do I need to know to implement the core TTS engine that loads effi
 
 ## Technology Deep Dive
 
-### Kokoro TTS (≥0.9.4)
+### Kokoro TTS (≥0.9.4, v1.0 models available)
 
 **What it is:** A compact 82M parameter neural TTS model achieving near-ElevenLabs quality.
+
+**Latest Updates (March 2025):**
+- **v1.0 models released** (Jan 28, 2025) — improved quality and consistency
+- Uses `misaki` G2P library instead of direct espeak-ng calls
+- Multi-language support: English ('a', 'b'), Spanish ('e'), French ('f'), Hindi ('h'), Italian ('i'), Japanese ('j'), Portuguese ('p'), Mandarin ('z')
 
 **Installation:**
 ```bash
 pip install kokoro>=0.9.4
 pip install soundfile>=0.13.0
-# espeak-ng required for phonemization fallback
+# espeak-ng still required as OOD fallback
 brew install espeak-ng  # macOS
 ```
 
@@ -66,6 +71,7 @@ torchaudio.save('output.wav', torch.cat(audio_segments), 24000)
 **MPS vs CPU Performance:**
 - MPS: 50-100x real-time factor (RTF) on M1
 - CPU: 5-10x RTF (still usable, much slower)
+- **CRITICAL:** Set `PYTORCH_ENABLE_MPS_FALLBACK=1` for M1 GPU acceleration
 - Fallback logic essential — MPS has incomplete operator coverage
 
 ### PyTorch MPS Backend
@@ -73,6 +79,10 @@ torchaudio.save('output.wav', torch.cat(audio_segments), 24000)
 **Device Detection:**
 ```python
 import torch
+import os
+
+# IMPORTANT: Enable MPS fallback for Apple Silicon
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 
 def get_optimal_device():
     if torch.backends.mps.is_available():
@@ -86,19 +96,32 @@ def get_optimal_device():
 ```
 
 **Known Issues:**
+- MPS requires `PYTORCH_ENABLE_MPS_FALLBACK=1` environment variable
 - Some operations fallback to CPU silently
 - First inference is slower (warmup required)
 - Memory fragmentation possible with long-running service
+
+### Alternative: kokoro-onnx
+
+For even faster inference, consider `kokoro-onnx`:
+- ONNX Runtime instead of PyTorch
+- ~300MB model (~80MB quantized)
+- Near real-time on M1
+- MIT licensed (model still Apache 2.0)
+
+```bash
+pip install kokoro-onnx soundfile
+```
 
 ### Voice Selection
 
 **Recommended curated voices (2-3):**
 
-| Voice ID | Gender | Quality | Notes |
-|----------|--------|---------|-------|
-| `af_heart` | Female | Excellent | Warm, natural tone |
-| `am_echo` | Male | Excellent | Clear, professional |
-| `bf_emma` | Female | Very Good | British accent variety |
+| Voice ID | Gender | Quality | Language | Notes |
+|----------|--------|---------|----------|-------|
+| `af_heart` | Female | Excellent | American | Warm, natural tone |
+| `am_echo` | Male | Excellent | American | Clear, professional |
+| `bf_emma` | Female | Very Good | British | Accent variety |
 
 **Voice Loading Pattern:**
 ```python
@@ -164,6 +187,9 @@ def preprocess_text(text: str) -> str:
 **Critical for performance — never load per-request:**
 
 ```python
+import os
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'  # BEFORE importing torch
+
 from functools import lru_cache
 
 class TTSService:
@@ -215,11 +241,11 @@ class TTSService:
 │  - Audio generation                 │
 ├─────────────────────────────────────┤
 │  Kokoro Pipeline                    │
-│  - ONNX Runtime inference           │
-│  - Phonemization (espeak-ng)        │
+│  - PyTorch inference                │
+│  - Phonemization (misaki/espeak-ng) │
 │  - Audio synthesis                  │
 ├─────────────────────────────────────┤
-│  PyTorch / ONNX Runtime             │
+│  PyTorch / MPS                      │
 │  - MPS / CPU execution              │
 │  - Memory management                │
 └─────────────────────────────────────┘
@@ -268,6 +294,7 @@ def safe_generate(text, voice_id, device_preference='mps'):
 **Problem:** PyTorch MPS has incomplete operator coverage.
 
 **Solution:**
+- **Set `PYTORCH_ENABLE_MPS_FALLBACK=1`** before importing torch
 - Always implement CPU fallback
 - Test on actual M1 hardware
 - Graceful degradation (log warning, continue)
@@ -308,6 +335,7 @@ def safe_generate(text, voice_id, device_preference='mps'):
 
 - [ ] Kokoro ≥0.9.4 installed with dependencies
 - [ ] espeak-ng installed and accessible
+- [ ] `PYTORCH_ENABLE_MPS_FALLBACK=1` set in environment
 - [ ] Device detection with MPS/CPU fallback
 - [ ] Singleton TTS service initialized at startup
 - [ ] 2-3 voices curated and tested
@@ -322,10 +350,11 @@ def safe_generate(text, voice_id, device_preference='mps'):
 ## Sources
 
 - Kokoro GitHub: https://github.com/hexgrad/kokoro
+- Kokoro v1.0 Release: https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0
 - kokoro-onnx: https://github.com/thewh1teagle/kokoro-onnx
 - PyTorch MPS: https://pytorch.org/docs/stable/notes/mps.html
 - Project Research: `.planning/research/SUMMARY.md`
 
 ---
 
-*Derived from project research. Ready for planning.*
+*Updated with v1.0 model findings. Ready for planning.*

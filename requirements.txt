@@ -1,0 +1,10 @@
+# Core TTS
+kokoro>=0.7.11
+
+# Web API
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Audio handling
+soundfile>=0.12.1
+numpy>=1.24.0
