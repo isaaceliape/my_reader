@@ -96,6 +96,4 @@ def cache_stats() -> dict[str, Any]:
         "maxsize": url_cache.maxsize,
         "ttl": url_cache.ttl,
         "currsize": len(url_cache),
-        "hits": url_cache.hits,
-        "misses": url_cache.misses,
     }

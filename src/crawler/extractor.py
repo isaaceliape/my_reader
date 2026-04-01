@@ -3,6 +3,7 @@ Article extraction module using readability-lxml and language detection.
 """
 
 from readability import Document
+from bs4 import BeautifulSoup
 from langdetect import detect, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 
@@ -20,8 +21,13 @@ def extract_article(html: str) -> dict:
         Dictionary with 'title', 'html', and 'text' keys
     """
     doc = Document(html)
+    summary = doc.summary()
 
-    return {"title": doc.title(), "html": doc.summary(), "text": doc.text_content()}
+    # Extract plain text from the summary HTML
+    soup = BeautifulSoup(summary, "lxml")
+    text = soup.get_text(separator=" ", strip=True)
+
+    return {"title": doc.title(), "html": summary, "text": text}
 
 
 def detect_language(text: str) -> str | None:
