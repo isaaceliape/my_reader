@@ -24,10 +24,6 @@
 | Fase | Descrição | Status |
 |------|-----------|--------|
 | 1 | Configuração Inicial | ✅ COMPLETO |
-| 2 | Web Crawler | 📋 PLANEJADO |
+| 2 | Web Crawler | 🔄 PRONTO PARA EXECUÇÃO (3 planos) |
 
-## Próximos Passos
-
-1. Planejar fase 2 (Web Crawler) via `/fase-planejar-fase`
-2. Definir tarefas específicas para implementação do crawler
-3. Identificar bibliotecas de crawling (BeautifulSoup, requests, etc.)
+**Próxima ação:** `/fase-executar-fase 02`
