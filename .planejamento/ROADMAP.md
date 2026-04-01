@@ -22,7 +22,7 @@
 
 ### Fase 2: Web Crawler
 
-**Status:** PLANEJADO
+**Status:** PRONTO PARA EXECUÇÃO
 
 **Objetivo:** Permitir que usuários compartilhem URLs e gerem áudio de artigos
 
@@ -32,8 +32,14 @@
 - [ ] Integração com pipeline TTS existente
 - [ ] UI para input de URL
 - [ ] Cache de URLs processadas
+- [x] Planos criados (3 planos em 3 etapas)
 
 **Diretório:** `.planejamento/fases/02-web-crawler/`
+
+**Planos:**
+- [x] 02-01 — Crawler core (models, client, parser, extractor, cache)
+- [x] 02-02 — Integração backend (endpoint /api/url)
+- [ ] 02-03 — UI e testes
 
 ---
 
