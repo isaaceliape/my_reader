@@ -214,6 +214,166 @@
         .error-message.visible {
             display: block;
         }
+
+        .url-section {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .url-input-group input[type="url"] {
+            flex: 1;
+            padding: 14px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+
+        .url-input-group input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-process {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-process:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .loading-stages {
+            display: none;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .loading-stages.visible {
+            display: block;
+        }
+
+        .loading-stages .stage {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            color: #999;
+        }
+
+        .loading-stages .stage.active {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .loading-stages .stage.completed {
+            color: #155724;
+        }
+
+        .loading-stages .stage-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+        }
+
+        .loading-stages .stage.active .stage-icon {
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-stages .stage.completed .stage-icon {
+            background: #155724;
+            border-color: #155724;
+        }
+
+        .loading-stages .stage.completed .stage-icon::after {
+            content: '✓';
+            color: white;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-section {
+            display: none;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+
+        .preview-section.visible {
+            display: block;
+        }
+
+        .preview-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+
+        .preview-text {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .cache-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: 600;
+        }
+
+        .cache-status.hit {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .cache-status.miss {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .url-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-audio {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-audio:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -223,12 +383,65 @@
 
         <div id="status" class="status">Checking...</div>
 
-        <textarea 
-            id="textInput" 
-            placeholder="Type or paste your text here..."
-            maxlength="5000"
-        ></textarea>
-        <div class="char-count"><span id="charCount">0</span> / 5000 characters</div>
+        <!-- URL to Audio Section -->
+        <div class="url-section">
+            <h2 style="font-size: 18px; color: #333; margin-bottom: 16px;">URL to Audio</h2>
+            
+            <div class="url-input-group">
+                <input 
+                    type="url" 
+                    id="urlInput" 
+                    placeholder="Cole URL do artigo..."
+                >
+                <button id="processUrlBtn" class="btn-process">
+                    <span>Processar URL</span>
+                </button>
+            </div>
+
+            <div id="loadingStages" class="loading-stages">
+                <div class="stage" id="stageFetching">
+                    <div class="stage-icon"></div>
+                    <span>Buscando conteúdo...</span>
+                </div>
+                <div class="stage" id="stageExtracting">
+                    <div class="stage-icon"></div>
+                    <span>Extraindo artigo...</span>
+                </div>
+                <div class="stage" id="stageReady">
+                    <div class="stage-icon"></div>
+                    <span>Pronto para gerar áudio</span>
+                </div>
+            </div>
+
+            <div id="previewSection" class="preview-section">
+                <div class="preview-title">
+                    <span id="previewTitle"></span>
+                    <span id="cacheStatus" class="cache-status"></span>
+                </div>
+                <div id="previewText" class="preview-text"></div>
+                
+                <div class="url-actions" style="margin-top: 16px;">
+                    <button id="generateAudioBtn" class="btn-audio btn-process" disabled>
+                        <span>🔊</span>
+                        <span>Gerar Áudio</span>
+                    </button>
+                    <button id="newUrlBtn" class="btn-secondary" style="flex: 0; padding: 14px 20px;">
+                        <span>Nova URL</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manual Text Input Section -->
+        <div class="manual-section">
+            <h2 style="font-size: 18px; color: #333; margin-bottom: 16px;">Or Paste Text</h2>
+            
+            <textarea 
+                id="textInput" 
+                placeholder="Type or paste your text here..."
+                maxlength="5000"
+            ></textarea>
+            <div class="char-count"><span id="charCount">0</span> / 5000 characters</div>
 
         <div class="controls">
             <div class="control-group">
@@ -278,6 +491,21 @@
     <script>
         const API_BASE = '';
 
+        // URL section elements
+        const urlInput = document.getElementById('urlInput');
+        const processUrlBtn = document.getElementById('processUrlBtn');
+        const loadingStages = document.getElementById('loadingStages');
+        const stageFetching = document.getElementById('stageFetching');
+        const stageExtracting = document.getElementById('stageExtracting');
+        const stageReady = document.getElementById('stageReady');
+        const previewSection = document.getElementById('previewSection');
+        const previewTitle = document.getElementById('previewTitle');
+        const previewText = document.getElementById('previewText');
+        const cacheStatusEl = document.getElementById('cacheStatus');
+        const generateAudioBtn = document.getElementById('generateAudioBtn');
+        const newUrlBtn = document.getElementById('newUrlBtn');
+
+        // Manual text section elements
         const textInput = document.getElementById('textInput');
         const charCount = document.getElementById('charCount');
         const voiceSelect = document.getElementById('voiceSelect');
@@ -291,6 +519,9 @@
         const errorMessage = document.getElementById('errorMessage');
 
         let lastGeneratedBlob = null;
+        let currentArticleUrl = null;
+        let currentArticleTitle = null;
+        let currentArticleLanguage = null;
 
         // Update character count
         textInput.addEventListener('input', () => {
@@ -301,6 +532,162 @@
         speedRange.addEventListener('input', () => {
             speedDisplay.textContent = `${speedRange.value}x`;
         });
+
+        // Process URL button
+        processUrlBtn.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            // Reset state
+            hideError();
+            previewSection.classList.remove('visible');
+            loadingStages.classList.add('visible');
+            resetStages();
+
+            try {
+                // Stage 1: Fetching
+                setActiveStage(stageFetching);
+                
+                const response = await fetch(`${API_BASE}/api/url`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        voice: voiceSelect.value,
+                        speed: parseFloat(speedRange.value)
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to process URL');
+                }
+
+                // Stage 2: Extracting
+                setActiveStage(stageExtracting);
+
+                // Get metadata from headers
+                const articleTitle = response.headers.get('X-Article-Title') || 'Untitled';
+                const articleUrl = response.headers.get('X-Article-URL') || url;
+                const cacheStatus = response.headers.get('X-Cache');
+                const articleLanguage = response.headers.get('X-Article-Language');
+
+                // Read the response body to get article text
+                const blob = await response.blob();
+                const text = await blob.text();
+
+                // Stage 3: Ready
+                setActiveStage(stageReady);
+                markStageCompleted(stageFetching);
+                markStageCompleted(stageExtracting);
+
+                // Store article info
+                currentArticleUrl = articleUrl;
+                currentArticleTitle = articleTitle;
+                currentArticleLanguage = articleLanguage;
+
+                // Show preview
+                previewTitle.textContent = articleTitle;
+                
+                // Truncate text to 300 words max
+                const words = text.split(/\s+/);
+                if (words.length > 300) {
+                    previewText.textContent = words.slice(0, 300).join(' ') + '...';
+                } else {
+                    previewText.textContent = text;
+                }
+
+                // Show cache status
+                if (cacheStatus === 'HIT') {
+                    cacheStatusEl.textContent = 'Artigo em cache';
+                    cacheStatusEl.className = 'cache-status hit';
+                } else {
+                    cacheStatusEl.textContent = 'Artigo processado';
+                    cacheStatusEl.className = 'cache-status miss';
+                }
+
+                previewSection.classList.add('visible');
+                generateAudioBtn.disabled = false;
+
+            } catch (error) {
+                showError(error.message);
+                loadingStages.classList.remove('visible');
+            }
+        });
+
+        // Generate audio from URL
+        generateAudioBtn.addEventListener('click', async () => {
+            if (!currentArticleUrl) return;
+
+            setLoading(true);
+            hideError();
+
+            try {
+                const response = await fetch(`${API_BASE}/api/url`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: currentArticleUrl,
+                        voice: voiceSelect.value,
+                        speed: parseFloat(speedRange.value)
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Failed to generate audio');
+                }
+
+                const blob = await response.blob();
+                lastGeneratedBlob = blob;
+                
+                const audioUrl = URL.createObjectURL(blob);
+                audioElement.src = audioUrl;
+                audioPlayer.classList.add('visible');
+                
+                downloadBtn.disabled = false;
+                await audioElement.play();
+
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // New URL button
+        newUrlBtn.addEventListener('click', () => {
+            urlInput.value = '';
+            previewSection.classList.remove('visible');
+            loadingStages.classList.remove('visible');
+            generateAudioBtn.disabled = true;
+            currentArticleUrl = null;
+            currentArticleTitle = null;
+        });
+
+        function resetStages() {
+            stageFetching.classList.remove('active', 'completed');
+            stageExtracting.classList.remove('active', 'completed');
+            stageReady.classList.remove('active', 'completed');
+        }
+
+        function setActiveStage(stage) {
+            resetStages();
+            stage.classList.add('active');
+        }
+
+        function markStageCompleted(stage) {
+            stage.classList.remove('active');
+            stage.classList.add('completed');
+        }
 
         // Check API status on load
         async function checkStatus() {
@@ -321,7 +708,7 @@
             }
         }
 
-        // Generate and play audio
+        // Generate and play audio (manual text)
         playBtn.addEventListener('click', async () => {
             const text = textInput.value.trim();
             
@@ -388,6 +775,7 @@
         function setLoading(loading) {
             playBtn.disabled = loading;
             downloadBtn.disabled = loading || !lastGeneratedBlob;
+            generateAudioBtn.disabled = loading;
             
             if (loading) {
                 playBtn.innerHTML = '<span class="loading"></span><span>Generating...</span>';
