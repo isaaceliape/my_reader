@@ -25,6 +25,7 @@ class CrawlerClient:
         self.client = httpx.Client(
             timeout=timeout,
             follow_redirects=follow_redirects,
+            verify=False,  # Disable SSL verification for local dev
             headers=headers
             or {
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"

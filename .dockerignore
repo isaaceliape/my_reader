@@ -1,0 +1,65 @@
+# Docker ignore file for my_reader
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Testing
+tests/
+test_*.py
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Caches
+.ruff_cache/
+.mypy_cache/
+.nox/
+
+# Documentation
+*.md
+!README.md
+DEPLOYMENT.md
+
+# Planning
+.planning/
+.opencode/
+
+# Node (if any)
+node_modules/
+test-results/
+
+# Vercel
+.vercel/
+.vercelignore
+
+# Local config
+.env
+.env.local
+*.log
+
+# macOS
+.DS_Store
+
+# HuggingFace (don't include in build)
+README_spaces.md

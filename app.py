@@ -6,6 +6,7 @@ Runs entirely locally on MacBook Air M1
 import io
 import os
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
@@ -24,11 +25,26 @@ from src.crawler.cache import cache_invalidate, cache_clear
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
+
+# Global TTS pipeline (loaded once at startup)
+pipeline = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events."""
+    # Startup: Load TTS model
+    load_kokoro_pipeline()
+    yield
+    # Shutdown: Cleanup if needed (currently nothing to clean up)
+
+
+# Initialize FastAPI app with lifespan
 app = FastAPI(
     title="Local TTS Web App",
     description="Text-to-Speech powered by Kokoro TTS - runs locally on M1",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # Enable CORS for local development
@@ -47,9 +63,6 @@ if static_path.exists():
         "/static", StaticFiles(directory=str(static_path), html=True), name="static"
     )
     logger.info(f"Serving static files from {static_path}")
-
-# Global TTS pipeline (loaded once at startup)
-pipeline = None
 
 
 def get_device():
@@ -120,12 +133,6 @@ def generate_audio(text: str, voice: str, speed: float = 1.0) -> bytes:
     except Exception as e:
         logger.error(f"Audio generation failed: {e}")
         raise
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Load TTS model on startup"""
-    load_kokoro_pipeline()
 
 
 @app.get("/")

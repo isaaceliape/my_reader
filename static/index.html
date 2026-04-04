@@ -793,6 +793,35 @@
             errorMessage.classList.remove('visible');
         }
 
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            // Cmd+Enter: Generate and play audio (manual text)
+            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                event.preventDefault();
+                // Only trigger if text input is focused or URL preview is ready
+                if (document.activeElement === textInput || previewSection.classList.contains('visible')) {
+                    if (previewSection.classList.contains('visible') && !generateAudioBtn.disabled) {
+                        generateAudioBtn.click();
+                    } else if (document.activeElement === textInput) {
+                        playBtn.click();
+                    }
+                }
+            }
+            
+            // Space: Pause/resume audio playback (only when audio is playing)
+            if (event.key === ' ' && !audioPlayer.classList.contains('visible') === false) {
+                // Don't trigger if typing in input fields
+                if (document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT') {
+                    event.preventDefault();
+                    if (!audioElement.paused) {
+                        audioElement.pause();
+                    } else {
+                        audioElement.play();
+                    }
+                }
+            }
+        });
+
         // Initialize
         checkStatus();
     </script>
