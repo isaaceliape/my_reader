@@ -58,20 +58,48 @@ def optimize_cpu_settings():
 optimize_cpu_settings()
 
 
-# Global TTS pipeline (loaded once at startup)
+# Global TTS pipeline (loaded lazily on first request)
 pipeline = None
+pipeline_loading = False
+
+
+def get_or_load_pipeline():
+    """Get pipeline, loading it if necessary (lazy loading)"""
+    global pipeline, pipeline_loading
+    
+    if pipeline is not None:
+        return pipeline
+    
+    if pipeline_loading:
+        # Already loading, wait a bit and try again
+        import time
+        for _ in range(30):  # Wait up to 30 seconds
+            time.sleep(1)
+            if pipeline is not None:
+                return pipeline
+        raise HTTPException(status_code=503, detail="Model still loading, please try again")
+    
+    # Start loading
+    pipeline_loading = True
+    logger.info("Loading Kokoro pipeline on first request...")
+    
+    if load_kokoro_pipeline():
+        logger.info("Kokoro pipeline loaded successfully!")
+        return pipeline
+    else:
+        pipeline_loading = False
+        raise HTTPException(status_code=500, detail="Failed to load TTS model")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan context manager for startup and shutdown events."""
-    # Startup: Load TTS model
-    load_kokoro_pipeline()
+    """Lifespan context manager - no startup loading, lazy load instead"""
+    logger.info("App starting (model will load on first request)...")
     yield
-    # Shutdown: Cleanup if needed (currently nothing to clean up)
+    logger.info("App shutting down...")
 
 
-# Initialize FastAPI app with lifespan
+# Initialize FastAPI app with lifespan (no startup loading)
 app = FastAPI(
     title="Local TTS Web App",
     description="Text-to-Speech powered by Kokoro TTS - runs locally on M1",
@@ -145,15 +173,13 @@ def load_kokoro_pipeline():
 
 def generate_audio(text: str, voice: str, speed: float = 1.0) -> bytes:
     """Generate audio from text using Kokoro TTS"""
-    global pipeline
-
-    if pipeline is None:
-        raise RuntimeError("TTS pipeline not loaded")
-
+    # Load pipeline if not already loaded (lazy loading)
+    current_pipeline = get_or_load_pipeline()
+    
     try:
         # Kokoro pipeline is callable - returns a generator of Results
         # Each Result has: audio (torch.Tensor), phonemes, graphemes, etc.
-        results = pipeline(text, voice=voice, speed=speed)
+        results = current_pipeline(text, voice=voice, speed=speed)
 
         # Collect all audio segments (Kokoro may split long text)
         audio_segments = []
