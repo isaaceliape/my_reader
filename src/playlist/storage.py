@@ -17,7 +17,8 @@ STORAGE_PATH = Path("/storage/playlist")
 # Fallback to tmp if /storage doesn't exist (for testing)
 if not Path("/storage").exists():
     STORAGE_PATH = Path("/tmp/playlist")
-    print(f"Warning: /storage not found, using {STORAGE_PATH}")
+    import logging
+    logging.warning(f"/storage not found, using {STORAGE_PATH}")
 
 
 def ensure_storage_dir():
