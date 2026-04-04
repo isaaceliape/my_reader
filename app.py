@@ -1,6 +1,6 @@
 """
 Local TTS Web App - Kokoro TTS Backend
-Runs entirely locally on MacBook Air M1
+Optimized for CPU and GPU inference
 """
 
 import io
@@ -24,6 +24,29 @@ from src.crawler.cache import cache_invalidate, cache_clear
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Optimize PyTorch for CPU inference
+# Set before any CUDA/MPS checks to ensure CPU optimization
+def optimize_cpu_settings():
+    """Optimize PyTorch for CPU inference"""
+    # Set number of threads for CPU
+    torch.set_num_threads(4)  # Optimal for most CPU workloads
+    
+    # Enable MKL-DNN optimizations (Intel CPUs)
+    if 'mkldnn' in torch.backends:
+        torch.backends.mkldnn.enabled = True
+        torch.backends.mkldnn.set_flags(True)
+    
+    # Set float32 matrix multiplication precision
+    torch.set_float32_matmul_precision('medium')  # 'high' for accuracy, 'medium' for speed
+    
+    # Disable gradients for inference (saves memory)
+    torch.set_grad_enabled(False)
+    
+    logger.info("CPU optimization settings applied")
+
+# Apply CPU optimizations at module load
+optimize_cpu_settings()
 
 
 # Global TTS pipeline (loaded once at startup)
@@ -66,7 +89,7 @@ if static_path.exists():
 
 
 def get_device():
-    """Detect best available device for GPU acceleration"""
+    """Detect best available device with CPU optimizations"""
     # Check for CUDA (NVIDIA GPU) - primary for HuggingFace Spaces
     if torch.cuda.is_available():
         device = "cuda"
@@ -80,11 +103,17 @@ def get_device():
     # Check for MPS (Apple Silicon) - for local development on M1/M2
     if torch.backends.mps.is_available():
         logger.info("Using MPS (Metal Performance Shaders) for GPU acceleration")
+        logger.info("Note: MPS is optimized for Apple Silicon")
         return "mps"
     
-    # Fallback to CPU
-    logger.info("Using CPU (no GPU available)")
-    logger.info("Note: For faster inference, deploy on HuggingFace Spaces with GPU hardware")
+    # CPU with optimizations
+    logger.info("Using CPU with optimizations")
+    logger.info(f"PyTorch threads: {torch.get_num_threads()}")
+    logger.info(f"MKL-DNN enabled: {torch.backends.mkldnn.enabled if hasattr(torch.backends, 'mkldnn') else 'N/A'}")
+    logger.info(f"Matrix precision: {torch.get_float32_matmul_precision()}")
+    logger.info("CPU Optimization tips:")
+    logger.info("  - Enable GPU in HuggingFace Spaces Settings for 10-50x speedup")
+    logger.info("  - T4 Small GPU costs $0.20/hour")
     return "cpu"
 
 

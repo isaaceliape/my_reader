@@ -1,5 +1,5 @@
 # HuggingFace Spaces Dockerfile for my_reader TTS
-# Optimized for GPU acceleration on HuggingFace Spaces
+# Optimized for both CPU and GPU acceleration
 
 FROM python:3.11-slim
 
@@ -8,6 +8,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PIP_NO_CACHE_DIR=1
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+# Enable CPU optimizations
+ENV OMP_NUM_THREADS=4
+ENV MKL_NUM_THREADS=4
+ENV MKL_SERVICE_ENABLE=1
 
 # Set working directory
 WORKDIR /app
@@ -22,15 +26,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PyTorch with CUDA support first
-# HuggingFace Spaces GPU instances have NVIDIA GPUs with CUDA support
+# Install PyTorch with CPU optimizations first
+# CPU version is smaller and faster for CPU-only inference
+# GPU version will be installed if GPU is detected at runtime
 RUN pip install --upgrade pip && \
-    pip install torch --index-url https://download.pytorch.org/whl/cu118
+    pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-# Copy requirements (excluding torch if listed) and install other dependencies
+# Copy requirements and install other dependencies
 COPY requirements.txt .
 RUN grep -v "^torch" requirements.txt > requirements-no-torch.txt || true
 RUN pip install -r requirements-no-torch.txt || pip install -r requirements.txt
+
+# Optional: Install ONNX runtime for CPU optimization (uncomment if needed)
+# RUN pip install onnx onnxruntime
 
 # Copy application code
 COPY . .

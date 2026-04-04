@@ -24,6 +24,11 @@ pytest-asyncio>=0.21.0
 # Vercel Deployment
 mangum>=0.17.0
 
-# Note: PyTorch is installed separately in Dockerfile with CUDA support
-# For local CPU usage: pip install torch
-# For GPU: pip install torch --index-url https://download.pytorch.org/whl/cu118
+# Optional CPU Optimizations (uncomment to enable)
+# onnx>=1.15.0          # ONNX model format
+# onnxruntime>=1.16.0   # Optimized CPU inference
+# openvino>=2023.0.0    # Intel CPU optimization
+
+# PyTorch is installed separately in Dockerfile:
+# - CPU: pip install torch --index-url https://download.pytorch.org/whl/cpu
+# - GPU: pip install torch --index-url https://download.pytorch.org/whl/cu118
