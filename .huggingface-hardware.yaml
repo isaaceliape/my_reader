@@ -1,0 +1,21 @@
+# HuggingFace Spaces Hardware Configuration
+# This file requests GPU hardware for the Space
+
+# Available hardware options:
+# - cpu-basic (default, free): 2 vCPU, 16GB RAM
+# - cpu-upgrade ($0.06/hr): 4 vCPU, 32GB RAM
+# - t4-small ($0.20/hr): 1x NVIDIA T4, 16GB VRAM ⭐ RECOMMENDED for TTS
+# - t4-medium ($0.40/hr): 2x NVIDIA T4, 32GB VRAM
+# - l4x1 ($0.50/hr): 1x NVIDIA L4, 24GB VRAM
+# - a10g-small ($0.60/hr): 1x NVIDIA A10G, 24GB VRAM
+
+# For Kokoro TTS, we recommend at least t4-small for good performance
+# Expected speedup: 10-50x faster than CPU
+
+hardware:
+  current: cpu-basic
+  requested: t4-small
+
+# Optional: Set timeout for GPU cold starts (in seconds)
+# GPU instances may take 1-2 minutes to initialize
+timeout: 300

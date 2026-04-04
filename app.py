@@ -66,16 +66,26 @@ if static_path.exists():
 
 
 def get_device():
-    """Detect best available device for M1 Mac"""
+    """Detect best available device for GPU acceleration"""
+    # Check for CUDA (NVIDIA GPU) - primary for HuggingFace Spaces
+    if torch.cuda.is_available():
+        device = "cuda"
+        cuda_device = torch.cuda.current_device()
+        cuda_name = torch.cuda.get_device_name(cuda_device)
+        cuda_memory = torch.cuda.get_device_properties(cuda_device).total_memory / (1024**3)
+        logger.info(f"Using CUDA GPU: {cuda_name} ({cuda_memory:.1f}GB VRAM)")
+        logger.info(f"CUDA Version: {torch.version.cuda}")
+        return device
+    
+    # Check for MPS (Apple Silicon) - for local development on M1/M2
     if torch.backends.mps.is_available():
         logger.info("Using MPS (Metal Performance Shaders) for GPU acceleration")
         return "mps"
-    elif torch.cuda.is_available():
-        logger.info("Using CUDA GPU")
-        return "cuda"
-    else:
-        logger.info("Using CPU (no GPU available)")
-        return "cpu"
+    
+    # Fallback to CPU
+    logger.info("Using CPU (no GPU available)")
+    logger.info("Note: For faster inference, deploy on HuggingFace Spaces with GPU hardware")
+    return "cpu"
 
 
 def load_kokoro_pipeline():

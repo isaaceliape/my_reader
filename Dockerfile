@@ -1,5 +1,5 @@
 # HuggingFace Spaces Dockerfile for my_reader TTS
-# Uses Docker SDK for full control over the environment
+# Optimized for GPU acceleration on HuggingFace Spaces
 
 FROM python:3.11-slim
 
@@ -19,15 +19,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1-dev \
     ffmpeg \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-
-# Install Python dependencies
-# This layer will be cached, speeding up rebuilds
+# Install PyTorch with CUDA support first
+# HuggingFace Spaces GPU instances have NVIDIA GPUs with CUDA support
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+    pip install torch --index-url https://download.pytorch.org/whl/cu118
+
+# Copy requirements (excluding torch if listed) and install other dependencies
+COPY requirements.txt .
+RUN grep -v "^torch" requirements.txt > requirements-no-torch.txt || true
+RUN pip install -r requirements-no-torch.txt || pip install -r requirements.txt
 
 # Copy application code
 COPY . .
