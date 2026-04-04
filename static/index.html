@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Local TTS - my_reader</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             box-sizing: border-box;
@@ -257,9 +259,116 @@
                 padding: 12px;
             }
 
-            .audio-player {
-                padding: 16px;
-            }
+        .audio-player {
+            padding: 16px;
+        }
+
+        /* Custom Audio Player Styles */
+        .custom-audio-player {
+            margin-top: 24px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            display: none;
+            border: 1px solid #dee2e6;
+        }
+
+        .custom-audio-player.visible {
+            display: block;
+        }
+
+        .audio-progress-container {
+            margin-bottom: 16px;
+        }
+
+        .audio-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #dee2e6;
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .audio-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .audio-time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+            font-family: 'SF Mono', 'Consolas', monospace;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .audio-btn {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 18px;
+            color: #667eea;
+        }
+
+        .audio-btn:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .audio-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .audio-btn.btn-large {
+            width: 56px;
+            height: 56px;
+            font-size: 24px;
+        }
+
+        .audio-btn.btn-stop {
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+
+        .audio-btn.btn-stop:hover:not(:disabled) {
+            background: #dc3545;
+            color: white;
+        }
+
+        .audio-btn.btn-rewind,
+        .audio-btn.btn-forward {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+        }
+
+        /* Hide default audio element */
+        audio {
+            display: none;
+        }
 
             .preview-section {
                 padding: 16px;
@@ -568,20 +677,46 @@
 
         <div class="button-group">
             <button id="playBtn" class="btn-primary">
-                <span>▶</span>
+                <i class="fas fa-play"></i>
                 <span>Generate & Play</span>
             </button>
             <button id="downloadBtn" class="btn-secondary" disabled>
-                <span>⬇</span>
+                <i class="fas fa-download"></i>
                 <span>Download</span>
             </button>
         </div>
 
         <div id="errorMessage" class="error-message"></div>
 
-        <div id="audioPlayer" class="audio-player">
-            <label>Audio Player</label>
-            <audio id="audioElement" controls></audio>
+        <!-- Custom Audio Player -->
+        <div id="customAudioPlayer" class="custom-audio-player">
+            <div class="audio-progress-container">
+                <div class="audio-progress-bar" id="audioProgressBar">
+                    <div class="audio-progress-fill" id="audioProgressFill"></div>
+                </div>
+                <div class="audio-time-display">
+                    <span id="audioCurrentTime">0:00</span>
+                    <span id="audioTotalTime">0:00</span>
+                </div>
+            </div>
+            
+            <div class="audio-controls">
+                <button class="audio-btn btn-rewind" id="audioRewindBtn" title="Rewind 10s">
+                    <i class="fas fa-backward"></i>
+                </button>
+                <button class="audio-btn btn-large" id="audioPlayPauseBtn" title="Play/Pause">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="audio-btn btn-stop" id="audioStopBtn" title="Stop">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <button class="audio-btn btn-forward" id="audioForwardBtn" title="Forward 10s">
+                    <i class="fas fa-forward"></i>
+                </button>
+            </div>
+            
+            <!-- Hidden native audio element -->
+            <audio id="audioElement"></audio>
         </div>
     </div>
 
@@ -610,8 +745,16 @@
         const speedDisplay = document.getElementById('speedDisplay');
         const playBtn = document.getElementById('playBtn');
         const downloadBtn = document.getElementById('downloadBtn');
-        const audioPlayer = document.getElementById('audioPlayer');
+        const customAudioPlayer = document.getElementById('customAudioPlayer');
         const audioElement = document.getElementById('audioElement');
+        const audioProgressBar = document.getElementById('audioProgressBar');
+        const audioProgressFill = document.getElementById('audioProgressFill');
+        const audioCurrentTimeEl = document.getElementById('audioCurrentTime');
+        const audioTotalTimeEl = document.getElementById('audioTotalTime');
+        const audioPlayPauseBtn = document.getElementById('audioPlayPauseBtn');
+        const audioStopBtn = document.getElementById('audioStopBtn');
+        const audioRewindBtn = document.getElementById('audioRewindBtn');
+        const audioForwardBtn = document.getElementById('audioForwardBtn');
         const statusEl = document.getElementById('status');
         const errorMessage = document.getElementById('errorMessage');
 
@@ -748,9 +891,10 @@
                 
                 const audioUrl = URL.createObjectURL(blob);
                 audioElement.src = audioUrl;
-                audioPlayer.classList.add('visible');
+                customAudioPlayer.classList.add('visible');
                 
                 downloadBtn.disabled = false;
+                updatePlayPauseIcon(true);
                 await audioElement.play();
 
             } catch (error) {
@@ -840,12 +984,13 @@
                 
                 const audioUrl = URL.createObjectURL(blob);
                 audioElement.src = audioUrl;
-                audioPlayer.classList.add('visible');
+                customAudioPlayer.classList.add('visible');
                 
                 // Enable download button
                 downloadBtn.disabled = false;
                 
                 // Auto-play
+                updatePlayPauseIcon(true);
                 await audioElement.play();
                 
             } catch (error) {
@@ -877,7 +1022,7 @@
             if (loading) {
                 playBtn.innerHTML = '<span class="loading"></span><span>Generating...</span>';
             } else {
-                playBtn.innerHTML = '<span>▶</span><span>Generate & Play</span>';
+                playBtn.innerHTML = '<i class="fas fa-play"></i><span>Generate & Play</span>';
             }
         }
 
@@ -889,6 +1034,91 @@
         function hideError() {
             errorMessage.classList.remove('visible');
         }
+
+        // Format time as mm:ss
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Update audio progress bar and time display
+        function updateAudioProgress() {
+            const currentTime = audioElement.currentTime;
+            const duration = audioElement.duration;
+            
+            if (duration > 0) {
+                const progress = (currentTime / duration) * 100;
+                audioProgressFill.style.width = `${progress}%`;
+                audioCurrentTimeEl.textContent = formatTime(currentTime);
+                audioTotalTimeEl.textContent = formatTime(duration);
+            }
+        }
+
+        // Update play/pause button icon
+        function updatePlayPauseIcon(isPlaying) {
+            const icon = audioPlayPauseBtn.querySelector('i');
+            if (isPlaying) {
+                icon.classList.remove('fa-play');
+                icon.classList.add('fa-pause');
+            } else {
+                icon.classList.remove('fa-pause');
+                icon.classList.add('fa-play');
+            }
+        }
+
+        // Custom audio player controls
+        audioPlayPauseBtn.addEventListener('click', () => {
+            if (audioElement.paused) {
+                audioElement.play();
+                updatePlayPauseIcon(true);
+            } else {
+                audioElement.pause();
+                updatePlayPauseIcon(false);
+            }
+        });
+
+        audioStopBtn.addEventListener('click', () => {
+            audioElement.pause();
+            audioElement.currentTime = 0;
+            updatePlayPauseIcon(false);
+            audioProgressFill.style.width = '0%';
+            audioCurrentTimeEl.textContent = '0:00';
+        });
+
+        audioRewindBtn.addEventListener('click', () => {
+            audioElement.currentTime = Math.max(0, audioElement.currentTime - 10);
+        });
+
+        audioForwardBtn.addEventListener('click', () => {
+            audioElement.currentTime = Math.min(audioElement.duration, audioElement.currentTime + 10);
+        });
+
+        // Click on progress bar to seek
+        audioProgressBar.addEventListener('click', (e) => {
+            const rect = audioProgressBar.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const width = rect.width;
+            const duration = audioElement.duration;
+            
+            if (duration > 0) {
+                audioElement.currentTime = (clickX / width) * duration;
+            }
+        });
+
+        // Audio event listeners
+        audioElement.addEventListener('timeupdate', updateAudioProgress);
+        
+        audioElement.addEventListener('loadedmetadata', () => {
+            audioTotalTimeEl.textContent = formatTime(audioElement.duration);
+        });
+
+        audioElement.addEventListener('ended', () => {
+            updatePlayPauseIcon(false);
+            audioProgressFill.style.width = '0%';
+            audioElement.currentTime = 0;
+        });
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (event) => {
@@ -905,15 +1135,17 @@
                 }
             }
             
-            // Space: Pause/resume audio playback (only when audio is playing)
-            if (event.key === ' ' && !audioPlayer.classList.contains('visible') === false) {
+            // Space: Pause/resume audio playback (only when audio player is visible)
+            if (event.key === ' ' && customAudioPlayer.classList.contains('visible')) {
                 // Don't trigger if typing in input fields
                 if (document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT') {
                     event.preventDefault();
                     if (!audioElement.paused) {
                         audioElement.pause();
+                        updatePlayPauseIcon(false);
                     } else {
                         audioElement.play();
+                        updatePlayPauseIcon(true);
                     }
                 }
             }
