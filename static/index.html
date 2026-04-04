@@ -509,6 +509,20 @@
                 padding: 16px;
             }
 
+            .custom-audio-player {
+                padding: 16px;
+            }
+
+            .audio-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 12px;
+            }
+
+            .audio-controls {
+                gap: 8px;
+            }
+
             .generation-progress {
                 padding: 12px;
             }
@@ -584,15 +598,18 @@
             background: white;
             border: 2px solid #667eea;
             border-radius: 50%;
-            width: 44px;
-            height: 44px;
+            width: 56px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 18px;
+            font-size: 14px;
+            font-weight: 600;
             color: #667eea;
+            padding: 0;
+            line-height: 1;
         }
 
         .audio-btn:hover:not(:disabled) {
@@ -606,12 +623,6 @@
             cursor: not-allowed;
         }
 
-        .audio-btn.btn-large {
-            width: 56px;
-            height: 56px;
-            font-size: 24px;
-        }
-
         .audio-btn.btn-stop {
             border-color: #dc3545;
             color: #dc3545;
@@ -620,13 +631,6 @@
         .audio-btn.btn-stop:hover:not(:disabled) {
             background: #dc3545;
             color: white;
-        }
-
-        .audio-btn.btn-rewind,
-        .audio-btn.btn-forward {
-            width: 40px;
-            height: 40px;
-            font-size: 16px;
         }
 
         /* Hide default audio element */
@@ -996,17 +1000,17 @@
             </div>
             
             <div class="audio-controls">
-                <button class="audio-btn btn-rewind" id="audioRewindBtn" title="Rewind 10s">
-                    <i class="fas fa-backward"></i>
+                <button class="audio-btn" id="audioRewindBtn" title="Rewind 10 seconds">
+                    &lt; 10s
                 </button>
-                <button class="audio-btn btn-large" id="audioPlayPauseBtn" title="Play/Pause">
+                <button class="audio-btn" id="audioPlayPauseBtn" title="Play/Pause">
                     <i class="fas fa-play"></i>
                 </button>
                 <button class="audio-btn btn-stop" id="audioStopBtn" title="Stop">
                     <i class="fas fa-stop"></i>
                 </button>
-                <button class="audio-btn btn-forward" id="audioForwardBtn" title="Forward 10s">
-                    <i class="fas fa-forward"></i>
+                <button class="audio-btn" id="audioForwardBtn" title="Forward 10 seconds">
+                    10s &gt;
                 </button>
             </div>
             
