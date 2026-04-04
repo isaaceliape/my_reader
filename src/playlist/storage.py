@@ -14,6 +14,11 @@ from typing import Optional, List, Dict, Any
 # HuggingFace Spaces persistent storage path
 STORAGE_PATH = Path("/storage/playlist")
 
+# Fallback to tmp if /storage doesn't exist (for testing)
+if not Path("/storage").exists():
+    STORAGE_PATH = Path("/tmp/playlist")
+    print(f"Warning: /storage not found, using {STORAGE_PATH}")
+
 
 def ensure_storage_dir():
     """Ensure storage directory exists"""
