@@ -202,6 +202,103 @@
             margin-top: 8px;
         }
 
+        /* Mobile Responsive Styles */
+        @media (max-width: 640px) {
+            body {
+                padding: 16px 12px;
+            }
+
+            .container {
+                padding: 24px 20px;
+                border-radius: 12px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .subtitle {
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+
+            .url-input-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .url-input-group input[type="url"] {
+                width: 100%;
+            }
+
+            .btn-process {
+                width: 100%;
+            }
+
+            .controls {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button {
+                width: 100%;
+                padding: 12px 20px;
+                font-size: 15px;
+            }
+
+            textarea {
+                min-height: 150px;
+                font-size: 16px; /* Prevents iOS zoom on focus */
+                padding: 12px;
+            }
+
+            .audio-player {
+                padding: 16px;
+            }
+
+            .preview-section {
+                padding: 16px;
+            }
+
+            .preview-title {
+                font-size: 16px;
+            }
+
+            .preview-text {
+                font-size: 13px;
+                max-height: 150px;
+            }
+
+            .url-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .url-actions button {
+                width: 100%;
+            }
+
+            #newUrlBtn {
+                flex: 1;
+            }
+        }
+
+        /* Prevent horizontal overflow */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+
+        .container {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
         .error-message {
             background: #f8d7da;
             color: #721c24;
