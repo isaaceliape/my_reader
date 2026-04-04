@@ -282,6 +282,167 @@
             50% { transform: scale(1.1); }
         }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            min-width: 300px;
+            max-width: 400px;
+            pointer-events: auto;
+            animation: slideIn 0.3s ease forwards;
+            border-left: 4px solid;
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        .toast.toast-hidden {
+            animation: slideOut 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOut {
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .toast-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .toast-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            color: #999;
+            font-size: 16px;
+            transition: color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .toast-close:hover {
+            color: #333;
+        }
+
+        /* Toast Types */
+        .toast-error {
+            border-left-color: #dc3545;
+        }
+
+        .toast-error .toast-icon {
+            background: #dc3545;
+            color: white;
+        }
+
+        .toast-error .toast-title {
+            color: #dc3545;
+        }
+
+        .toast-success {
+            border-left-color: #28a745;
+        }
+
+        .toast-success .toast-icon {
+            background: #28a745;
+            color: white;
+        }
+
+        .toast-success .toast-title {
+            color: #28a745;
+        }
+
+        .toast-warning {
+            border-left-color: #ffc107;
+        }
+
+        .toast-warning .toast-icon {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .toast-warning .toast-title {
+            color: #ffc107;
+        }
+
+        .toast-info {
+            border-left-color: #17a2b8;
+        }
+
+        .toast-info .toast-icon {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .toast-info .toast-title {
+            color: #17a2b8;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 640px) {
+            .toast-container {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+
+            .toast {
+                min-width: auto;
+                max-width: none;
+            }
+        }
+
         .char-count {
             text-align: right;
             font-size: 12px;
@@ -820,7 +981,7 @@
             </div>
         </div>
 
-        <div id="errorMessage" class="error-message"></div>
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
 
         <!-- Custom Audio Player -->
         <div id="customAudioPlayer" class="custom-audio-player">
@@ -854,8 +1015,78 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <script>
         const API_BASE = '';
+
+        // Toast notification functions
+        function showToast(type, title, message, duration = 5000) {
+            const container = document.getElementById('toastContainer');
+            
+            const icons = {
+                error: 'fa-times-circle',
+                success: 'fa-check-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="fas ${icons[type]}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto-remove after duration
+            if (duration > 0) {
+                setTimeout(() => {
+                    if (toast.parentElement) {
+                        toast.classList.add('toast-hidden');
+                        setTimeout(() => {
+                            if (toast.parentElement) {
+                                toast.remove();
+                            }
+                        }, 300);
+                    }
+                }, duration);
+            }
+
+            return toast;
+        }
+
+        function showError(message, duration = 5000) {
+            showToast('error', 'Error', message, duration);
+        }
+
+        function showSuccess(message, duration = 3000) {
+            showToast('success', 'Success', message, duration);
+        }
+
+        function showWarning(message, duration = 4000) {
+            showToast('warning', 'Warning', message, duration);
+        }
+
+        function showInfo(message, duration = 3000) {
+            showToast('info', 'Info', message, duration);
+        }
+
+        // Clear all toasts
+        function clearToasts() {
+            const container = document.getElementById('toastContainer');
+            container.innerHTML = '';
+        }
 
         // URL section elements
         const urlInput = document.getElementById('urlInput');
@@ -987,9 +1218,11 @@
                 if (cacheStatus === 'HIT') {
                     cacheStatusEl.textContent = 'Artigo em cache';
                     cacheStatusEl.className = 'cache-status hit';
+                    showInfo('Article loaded from cache', 2000);
                 } else {
                     cacheStatusEl.textContent = 'Artigo processado';
                     cacheStatusEl.className = 'cache-status miss';
+                    showSuccess('Article processed successfully', 2000);
                 }
 
                 previewSection.classList.add('visible');
@@ -1203,7 +1436,8 @@
         }
 
         function hideError() {
-            errorMessage.classList.remove('visible');
+            // Legacy function - kept for compatibility
+            // Errors now use toast notifications
         }
 
         // Generation progress functions
