@@ -1,3 +1,13 @@
+---
+title: my_reader - Local TTS Web App
+emoji: 🔊
+colorFrom: purple
+colorTo: blue
+sdk: docker
+pinned: false
+license: mit
+---
+
 # 🔊 my_reader - Local TTS Web App
 
 > **Type or paste any text and hear it spoken with natural, ElevenLabs-quality voice synthesis - all running locally without cloud dependencies.**
