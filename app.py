@@ -297,7 +297,9 @@ async def text_to_speech(
                 playlist_item_id = item["id"]
                 logger.info(f"Added to playlist: {playlist_item_id}")
             except Exception as e:
+                import traceback
                 logger.error(f"Failed to add to playlist: {e}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
                 # Continue anyway - playlist is optional
 
         # Return as WAV stream
@@ -387,7 +389,9 @@ async def url_to_audio(
                 playlist_item_id = item["id"]
                 logger.info(f"Added to playlist: {playlist_item_id}")
             except Exception as e:
+                import traceback
                 logger.error(f"Failed to add to playlist: {e}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
                 # Continue anyway - playlist is optional
 
         # Prepare response headers with metadata
