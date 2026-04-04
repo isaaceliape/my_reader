@@ -1257,6 +1257,9 @@
             <div class="playlist-header">
                 <h3><i class="fas fa-list-ul"></i> Playlist</h3>
                 <div class="playlist-actions">
+                    <button class="btn-queue" id="btnClearCache" title="Clear URL cache">
+                        <i class="fas fa-trash-restore"></i> Clear Cache
+                    </button>
                     <button class="btn-queue" id="btnClearQueue" title="Clear queue">
                         <i class="fas fa-times"></i> Clear Queue
                     </button>
@@ -2091,6 +2094,24 @@
         document.getElementById('btnClearQueue').addEventListener('click', () => {
             playbackQueue = [];
             renderQueue();
+        });
+
+        // Clear URL cache
+        document.getElementById('btnClearCache').addEventListener('click', async () => {
+            if (!confirm('Clear all cached URL content? This will not delete playlist items.')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/cache/all`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showSuccess(data.message || 'Cache cleared');
+                }
+            } catch (error) {
+                showError('Failed to clear cache: ' + error.message);
+            }
         });
 
         // Download playlist item
