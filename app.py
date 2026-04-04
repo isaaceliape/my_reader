@@ -487,12 +487,21 @@ async def get_playlist():
 @app.get("/api/playlist/debug")
 async def debug_storage():
     """Debug endpoint to check storage status"""
-    from src.playlist.storage import STORAGE_PATH
+    from src.playlist.storage import STORAGE_PATH, ensure_storage_dir
     
     storage_exists = Path("/storage").exists()
     tmp_exists = Path("/tmp").exists()
+    
+    # Try to create directory
+    try:
+        ensure_storage_dir()
+        dir_created = True
+    except Exception as e:
+        dir_created = str(e)
+    
     playlist_dir_exists = STORAGE_PATH.exists()
     
+    # Try to write a test file
     try:
         test_file = STORAGE_PATH / "test.txt"
         test_file.write_text("test")
@@ -505,6 +514,7 @@ async def debug_storage():
         "storage_path": str(STORAGE_PATH),
         "/storage_exists": storage_exists,
         "/tmp_exists": tmp_exists,
+        "dir_created": dir_created,
         "playlist_dir_exists": playlist_dir_exists,
         "write_works": write_works
     }
