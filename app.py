@@ -20,6 +20,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from kokoro import KPipeline
 from src.crawler.integrator import process_url_to_audio
 from src.crawler.cache import cache_invalidate, cache_clear
+from src.playlist import (
+    add_to_playlist,
+    get_playlist_item,
+    get_audio_bytes,
+    delete_from_playlist,
+    reorder_playlist,
+    clear_playlist,
+    load_playlist,
+    get_playlist_stats,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -219,7 +229,10 @@ async def list_voices():
 
 @app.post("/tts")
 async def text_to_speech(
-    text: str = Body(...), voice: str = Body("af_heart"), speed: float = Body(1.0)
+    text: str = Body(...), 
+    voice: str = Body("af_heart"), 
+    speed: float = Body(1.0),
+    add_to_playlist: bool = Body(True)
 ):
     """
     Generate speech from text
@@ -228,6 +241,7 @@ async def text_to_speech(
         text: Text to synthesize
         voice: Voice ID to use
         speed: Playback speed (0.5 to 2.0)
+        add_to_playlist: Whether to add to playlist (default: True)
     """
     if not text or not text.strip():
         raise HTTPException(status_code=400, detail="Text is required")
@@ -243,14 +257,36 @@ async def text_to_speech(
         # Generate audio
         audio_data = generate_audio(text, voice, speed)
 
+        # Add to playlist if requested
+        playlist_item_id = None
+        if add_to_playlist:
+            try:
+                item = add_to_playlist(
+                    text=text,
+                    audio_data=audio_data,
+                    voice=voice,
+                    speed=speed,
+                    source="text"
+                )
+                playlist_item_id = item["id"]
+                logger.info(f"Added to playlist: {playlist_item_id}")
+            except Exception as e:
+                logger.error(f"Failed to add to playlist: {e}")
+                # Continue anyway - playlist is optional
+
         # Return as WAV stream
+        headers = {
+            "Content-Disposition": "attachment; filename=speech.wav",
+            "Cache-Control": "no-cache",
+        }
+        
+        if playlist_item_id:
+            headers["X-Playlist-Item-ID"] = playlist_item_id
+
         return StreamingResponse(
             io.BytesIO(audio_data),
             media_type="audio/wav",
-            headers={
-                "Content-Disposition": "attachment; filename=speech.wav",
-                "Cache-Control": "no-cache",
-            },
+            headers=headers,
         )
 
     except Exception as e:
@@ -263,6 +299,7 @@ async def url_to_audio(
     url: str = Body(...),
     voice: str = Body("af_heart"),
     speed: float = Body(1.0),
+    add_to_playlist: bool = Body(True)
 ):
     """
     Process a URL to extract article content and generate audio.
@@ -271,6 +308,7 @@ async def url_to_audio(
         url: URL of the article to process
         voice: Voice ID to use (default: "af_heart")
         speed: Playback speed 0.5-2.0 (default: 1.0)
+        add_to_playlist: Whether to add to playlist (default: True)
 
     Returns:
         StreamingResponse with audio and metadata headers
@@ -307,6 +345,25 @@ async def url_to_audio(
         # Generate audio
         audio_data = generate_audio(article.text, voice, speed)
 
+        # Add to playlist if requested
+        playlist_item_id = None
+        if add_to_playlist:
+            try:
+                item = add_to_playlist(
+                    text=article.text,
+                    audio_data=audio_data,
+                    voice=voice,
+                    speed=speed,
+                    source="url",
+                    url=article.url,
+                    title=article.title
+                )
+                playlist_item_id = item["id"]
+                logger.info(f"Added to playlist: {playlist_item_id}")
+            except Exception as e:
+                logger.error(f"Failed to add to playlist: {e}")
+                # Continue anyway - playlist is optional
+
         # Prepare response headers with metadata
         headers = {
             "X-Article-Title": article.title,
@@ -317,6 +374,9 @@ async def url_to_audio(
 
         if article.language:
             headers["X-Article-Language"] = article.language
+        
+        if playlist_item_id:
+            headers["X-Playlist-Item-ID"] = playlist_item_id
 
         return StreamingResponse(
             io.BytesIO(audio_data),
@@ -375,6 +435,101 @@ async def clear_all_cache():
     except Exception as e:
         logger.error(f"Cache clear failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============== Playlist API Endpoints ==============
+
+@app.get("/api/playlist")
+async def get_playlist():
+    """Get all playlist items"""
+    try:
+        playlist = load_playlist()
+        stats = get_playlist_stats()
+        return {
+            "items": playlist,
+            "stats": stats
+        }
+    except Exception as e:
+        logger.error(f"Failed to load playlist: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/playlist/{item_id}")
+async def get_playlist_item_endpoint(item_id: str):
+    """Get a specific playlist item"""
+    item = get_playlist_item(item_id)
+    
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    return item
+
+
+@app.get("/api/playlist/{item_id}/audio")
+async def get_playlist_audio(item_id: str):
+    """Get audio file for a playlist item"""
+    audio_data = get_audio_bytes(item_id)
+    
+    if not audio_data:
+        raise HTTPException(status_code=404, detail="Audio not found")
+    
+    item = get_playlist_item(item_id)
+    filename = f"{item['title'][:50]}.wav" if item else "audio.wav"
+    
+    return StreamingResponse(
+        io.BytesIO(audio_data),
+        media_type="audio/wav",
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{filename}\""
+        }
+    )
+
+
+@app.delete("/api/playlist/{item_id}")
+async def delete_playlist_item(item_id: str):
+    """Delete a playlist item"""
+    success = delete_from_playlist(item_id)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    return {"status": "success", "message": "Item deleted"}
+
+
+@app.put("/api/playlist/{item_id}/reorder")
+async def reorder_playlist_item(item_id: str, new_index: int = Body(...)):
+    """Reorder a playlist item"""
+    success = reorder_playlist(item_id, new_index)
+    
+    if not success:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    return {"status": "success", "message": "Item reordered"}
+
+
+@app.delete("/api/playlist")
+async def clear_playlist_endpoint():
+    """Clear all playlist items"""
+    count = clear_playlist()
+    return {
+        "status": "success",
+        "message": f"Deleted {count} items",
+        "deleted_count": count
+    }
+
+
+@app.post("/api/playlist/add-to-queue")
+async def add_to_queue(item_id: str = Body(...)):
+    """Add playlist item to playback queue"""
+    item = get_playlist_item(item_id)
+    
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    return {
+        "status": "success",
+        "item": item
+    }
 
 
 if __name__ == "__main__":
