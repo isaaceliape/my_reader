@@ -562,6 +562,34 @@ async def add_to_queue(item_id: str = Body(...)):
     }
 
 
+@app.get("/api/playlist/debug")
+async def debug_storage():
+    """Debug endpoint to check storage status"""
+    from src.playlist.storage import STORAGE_PATH
+    import os
+    
+    storage_exists = Path("/storage").exists()
+    tmp_exists = Path("/tmp").exists()
+    playlist_dir_exists = STORAGE_PATH.exists()
+    
+    try:
+        # Try to write a test file
+        test_file = STORAGE_PATH / "test.txt"
+        test_file.write_text("test")
+        write_works = True
+        test_file.unlink()
+    except Exception as e:
+        write_works = str(e)
+    
+    return {
+        "storage_path": str(STORAGE_PATH),
+        "/storage_exists": storage_exists,
+        "/tmp_exists": tmp_exists,
+        "playlist_dir_exists": playlist_dir_exists,
+        "write_works": write_works
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
 
