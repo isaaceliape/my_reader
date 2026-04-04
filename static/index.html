@@ -197,6 +197,91 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Generation Progress Bar */
+        .generation-progress {
+            margin-top: 16px;
+            padding: 16px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            border: 1px solid #dee2e6;
+            display: none;
+        }
+
+        .generation-progress.visible {
+            display: block;
+        }
+
+        .generation-progress-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .generation-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #dee2e6;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .generation-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .generation-progress-stages {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .generation-progress-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .generation-progress-stage-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #999;
+            transition: all 0.3s ease;
+        }
+
+        .generation-progress-stage.active .generation-progress-stage-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        .generation-progress-stage.completed .generation-progress-stage-icon {
+            background: #28a745;
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
         .char-count {
             text-align: right;
             font-size: 12px;
@@ -259,9 +344,27 @@
                 padding: 12px;
             }
 
-        .audio-player {
-            padding: 16px;
-        }
+            .audio-player {
+                padding: 16px;
+            }
+
+            .generation-progress {
+                padding: 12px;
+            }
+
+            .generation-progress-title {
+                font-size: 13px;
+            }
+
+            .generation-progress-stages {
+                font-size: 10px;
+            }
+
+            .generation-progress-stage-icon {
+                width: 20px;
+                height: 20px;
+                font-size: 10px;
+            }
 
         /* Custom Audio Player Styles */
         .custom-audio-player {
@@ -686,6 +789,37 @@
             </button>
         </div>
 
+        <!-- Generation Progress Bar -->
+        <div id="generationProgress" class="generation-progress">
+            <div class="generation-progress-title">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <span id="generationProgressText">Generating audio...</span>
+            </div>
+            <div class="generation-progress-bar">
+                <div class="generation-progress-fill" id="generationProgressFill"></div>
+            </div>
+            <div class="generation-progress-stages">
+                <div class="generation-progress-stage" id="stagePreparing">
+                    <div class="generation-progress-stage-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <span>Preparing</span>
+                </div>
+                <div class="generation-progress-stage" id="stageGenerating">
+                    <div class="generation-progress-stage-icon">
+                        <i class="fas fa-wave-square"></i>
+                    </div>
+                    <span>Generating</span>
+                </div>
+                <div class="generation-progress-stage" id="stageFinalizing">
+                    <div class="generation-progress-stage-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <span>Finalizing</span>
+                </div>
+            </div>
+        </div>
+
         <div id="errorMessage" class="error-message"></div>
 
         <!-- Custom Audio Player -->
@@ -746,6 +880,12 @@
         const playBtn = document.getElementById('playBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const customAudioPlayer = document.getElementById('customAudioPlayer');
+        const generationProgress = document.getElementById('generationProgress');
+        const generationProgressFill = document.getElementById('generationProgressFill');
+        const generationProgressText = document.getElementById('generationProgressText');
+        const stagePreparing = document.getElementById('stagePreparing');
+        const stageGenerating = document.getElementById('stageGenerating');
+        const stageFinalizing = document.getElementById('stageFinalizing');
         const audioElement = document.getElementById('audioElement');
         const audioProgressBar = document.getElementById('audioProgressBar');
         const audioProgressFill = document.getElementById('audioProgressFill');
@@ -867,8 +1007,13 @@
 
             setLoading(true);
             hideError();
+            showGenerationProgress();
 
             try {
+                // Stage 1: Preparing
+                setGenerationStage('preparing');
+                await new Promise(resolve => setTimeout(resolve, 300));
+
                 const response = await fetch(`${API_BASE}/api/url`, {
                     method: 'POST',
                     headers: {
@@ -886,19 +1031,30 @@
                     throw new Error(errorData.detail || 'Failed to generate audio');
                 }
 
+                // Stage 2: Generating
+                setGenerationStage('generating');
+
                 const blob = await response.blob();
                 lastGeneratedBlob = blob;
+                
+                // Stage 3: Finalizing
+                setGenerationStage('finalizing');
                 
                 const audioUrl = URL.createObjectURL(blob);
                 audioElement.src = audioUrl;
                 customAudioPlayer.classList.add('visible');
                 
                 downloadBtn.disabled = false;
+                
+                // Complete progress
+                completeGenerationProgress();
+                
                 updatePlayPauseIcon(true);
                 await audioElement.play();
 
             } catch (error) {
                 showError(error.message);
+                hideGenerationProgress();
             } finally {
                 setLoading(false);
             }
@@ -960,8 +1116,13 @@
 
             setLoading(true);
             hideError();
+            showGenerationProgress();
 
             try {
+                // Stage 1: Preparing
+                setGenerationStage('preparing');
+                await new Promise(resolve => setTimeout(resolve, 300));
+
                 const response = await fetch(`${API_BASE}/tts`, {
                     method: 'POST',
                     headers: {
@@ -979,8 +1140,14 @@
                     throw new Error(errorData.detail || 'Generation failed');
                 }
 
+                // Stage 2: Generating
+                setGenerationStage('generating');
+
                 const blob = await response.blob();
                 lastGeneratedBlob = blob;
+                
+                // Stage 3: Finalizing
+                setGenerationStage('finalizing');
                 
                 const audioUrl = URL.createObjectURL(blob);
                 audioElement.src = audioUrl;
@@ -989,12 +1156,16 @@
                 // Enable download button
                 downloadBtn.disabled = false;
                 
+                // Complete progress
+                completeGenerationProgress();
+                
                 // Auto-play
                 updatePlayPauseIcon(true);
                 await audioElement.play();
                 
             } catch (error) {
                 showError(error.message);
+                hideGenerationProgress();
             } finally {
                 setLoading(false);
             }
@@ -1033,6 +1204,59 @@
 
         function hideError() {
             errorMessage.classList.remove('visible');
+        }
+
+        // Generation progress functions
+        function showGenerationProgress() {
+            generationProgress.classList.add('visible');
+            generationProgressFill.style.width = '0%';
+            resetGenerationStages();
+            setGenerationStage('preparing');
+        }
+
+        function hideGenerationProgress() {
+            generationProgress.classList.remove('visible');
+        }
+
+        function resetGenerationStages() {
+            [stagePreparing, stageGenerating, stageFinalizing].forEach(stage => {
+                stage.classList.remove('active', 'completed');
+            });
+        }
+
+        function setGenerationStage(stage) {
+            resetGenerationStages();
+            
+            if (stage === 'preparing') {
+                stagePreparing.classList.add('active');
+                generationProgressFill.style.width = '25%';
+                generationProgressText.textContent = 'Preparing text...';
+            } else if (stage === 'generating') {
+                stagePreparing.classList.add('completed');
+                stageGenerating.classList.add('active');
+                generationProgressFill.style.width = '60%';
+                generationProgressText.textContent = 'Generating audio with AI...';
+            } else if (stage === 'finalizing') {
+                stagePreparing.classList.add('completed');
+                stageGenerating.classList.add('completed');
+                stageFinalizing.classList.add('active');
+                generationProgressFill.style.width = '90%';
+                generationProgressText.textContent = 'Finalizing...';
+            }
+        }
+
+        function completeGenerationProgress() {
+            [stagePreparing, stageGenerating, stageFinalizing].forEach(stage => {
+                stage.classList.add('completed');
+                stage.classList.remove('active');
+            });
+            generationProgressFill.style.width = '100%';
+            generationProgressText.textContent = 'Ready!';
+            
+            // Hide after a short delay
+            setTimeout(() => {
+                hideGenerationProgress();
+            }, 1000);
         }
 
         // Format time as mm:ss
