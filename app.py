@@ -484,6 +484,32 @@ async def get_playlist():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/playlist/debug")
+async def debug_storage():
+    """Debug endpoint to check storage status"""
+    from src.playlist.storage import STORAGE_PATH
+    
+    storage_exists = Path("/storage").exists()
+    tmp_exists = Path("/tmp").exists()
+    playlist_dir_exists = STORAGE_PATH.exists()
+    
+    try:
+        test_file = STORAGE_PATH / "test.txt"
+        test_file.write_text("test")
+        write_works = True
+        test_file.unlink()
+    except Exception as e:
+        write_works = str(e)
+    
+    return {
+        "storage_path": str(STORAGE_PATH),
+        "/storage_exists": storage_exists,
+        "/tmp_exists": tmp_exists,
+        "playlist_dir_exists": playlist_dir_exists,
+        "write_works": write_works
+    }
+
+
 @app.get("/api/playlist/{item_id}")
 async def get_playlist_item_endpoint(item_id: str):
     """Get a specific playlist item"""
@@ -559,34 +585,6 @@ async def add_to_queue(item_id: str = Body(...)):
     return {
         "status": "success",
         "item": item
-    }
-
-
-@app.get("/api/playlist/debug")
-async def debug_storage():
-    """Debug endpoint to check storage status"""
-    from src.playlist.storage import STORAGE_PATH
-    import os
-    
-    storage_exists = Path("/storage").exists()
-    tmp_exists = Path("/tmp").exists()
-    playlist_dir_exists = STORAGE_PATH.exists()
-    
-    try:
-        # Try to write a test file
-        test_file = STORAGE_PATH / "test.txt"
-        test_file.write_text("test")
-        write_works = True
-        test_file.unlink()
-    except Exception as e:
-        write_works = str(e)
-    
-    return {
-        "storage_path": str(STORAGE_PATH),
-        "/storage_exists": storage_exists,
-        "/tmp_exists": tmp_exists,
-        "playlist_dir_exists": playlist_dir_exists,
-        "write_works": write_works
     }
 
 
