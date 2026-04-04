@@ -33,9 +33,8 @@ def optimize_cpu_settings():
     torch.set_num_threads(4)  # Optimal for most CPU workloads
     
     # Enable MKL-DNN optimizations (Intel CPUs)
-    if 'mkldnn' in torch.backends:
+    if hasattr(torch.backends, 'mkldnn'):
         torch.backends.mkldnn.enabled = True
-        torch.backends.mkldnn.set_flags(True)
     
     # Set float32 matrix multiplication precision
     torch.set_float32_matmul_precision('medium')  # 'high' for accuracy, 'medium' for speed
