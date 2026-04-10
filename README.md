@@ -27,6 +27,8 @@ license: mit
 - 🎚️ **Speed Control** - Adjust playback speed (0.5x - 2.0x)
 - 📱 **Responsive UI** - Works on desktop and mobile
 - ⌨️ **Keyboard Shortcuts** - Cmd+Enter to generate, Space to pause
+- 🎵 **Playlist System** - Queue multiple texts, drag-drop reordering, persistent storage
+- 🗑️ **Cache Management** - Clear cache button for storage cleanup
 
 ## 🚀 Live Demo
 
@@ -63,7 +65,7 @@ pip install -r requirements.txt
 python app.py
 
 # Open in browser
-open http://localhost:8000
+open http://localhost:7860
 ```
 
 ## 🎭 Available Voices
@@ -110,7 +112,25 @@ curl -X POST "http://localhost:8000/api/url" \
 ### List Available Voices
 
 ```bash
-curl "http://localhost:8000/voices"
+curl "http://localhost:7860/voices"
+```
+
+### Playlist Management
+
+```bash
+# Get current playlist
+curl "http://localhost:7860/api/playlist"
+
+# Add item to playlist
+curl -X POST "http://localhost:7860/api/playlist" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Hello world",
+    "voice": "af_heart"
+  }'
+
+# Debug storage status
+curl "http://localhost:7860/api/playlist/debug"
 ```
 
 ### Response Headers (URL endpoint)
@@ -133,6 +153,7 @@ curl "http://localhost:8000/voices"
 | **Language Detection** | langdetect |
 | **Audio Processing** | SoundFile + NumPy |
 | **Caching** | cachetools (TTL-based) |
+| **Playlist Storage** | JSON-based persistent storage with fallback to /tmp |
 
 ## 📊 Performance
 
@@ -171,18 +192,21 @@ python -m pytest tests/ --cov=app --cov=src
 
 ```
 my_reader/
-├── api/                    # Vercel serverless functions
-│   └── index.py           # Entry point for Vercel
+├── api/                    # API routes (legacy Vercel support)
+│   └── index.py           # Entry point
 ├── src/
-│   └── crawler/           # Web scraping module
-│       ├── client.py      # HTTP client (httpx)
-│       ├── parser.py      # HTML parsing
-│       ├── extractor.py   # Article extraction
-│       ├── cache.py       # Caching layer
-│       ├── integrator.py  # URL-to-audio pipeline
-│       └── models.py      # Data models
+│   ├── crawler/           # Web scraping module
+│   │   ├── client.py      # HTTP client (httpx)
+│   │   ├── parser.py      # HTML parsing
+│   │   ├── extractor.py   # Article extraction
+│   │   ├── cache.py       # Caching layer
+│   │   ├── integrator.py  # URL-to-audio pipeline
+│   │   └── models.py      # Data models
+│   └── playlist/          # Playlist management
+│       ├── __init__.py    # Package init
+│       └── storage.py     # Persistent storage with fallback logic
 ├── static/
-│   └── index.html         # Frontend UI
+│   └── index.html         # Frontend UI with playlist system
 ├── tests/
 │   ├── test_app_lifecycle.py
 │   ├── test_crawler.py
@@ -192,10 +216,10 @@ my_reader/
 │   ├── test_url_endpoint.py
 │   └── test_voices_endpoint.py
 ├── .planning/             # Project documentation
-├── app.py                 # FastAPI backend
-├── Dockerfile             # HuggingFace Spaces config
+├── .planejamento/         # Brazilian Portuguese planning docs
+├── app.py                 # FastAPI backend (main entry point)
+├── Dockerfile             # HuggingFace Spaces deployment
 ├── requirements.txt       # Python dependencies
-├── vercel.json            # Vercel configuration
 └── pytest.ini             # Test configuration
 ```
 
@@ -222,18 +246,17 @@ hf auth login
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 
-### Vercel
-
-⚠️ **Not recommended** - 60s build timeout causes failures with ML dependencies.
-
-Configuration files (`vercel.json`, `api/index.py`) are included but deployment may require Vercel Enterprise for longer timeouts.
-
 ### Local Docker
 
 ```bash
 docker build -t my_reader .
 docker run -p 7860:7860 my_reader
 ```
+
+**Hardware Acceleration:**
+- **CPU**: Default - optimized with ONNX runtime
+- **GPU**: Auto-detected on HuggingFace Spaces with GPU hardware
+- See [GPU_ACCELERATION.md](./GPU_ACCELERATION.md) and [CPU_OPTIMIZATION.md](./CPU_OPTIMIZATION.md)
 
 ## 🤝 Contributing
 
