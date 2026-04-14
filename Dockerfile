@@ -43,14 +43,19 @@ RUN pip install -r requirements-no-torch.txt || pip install -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create cache directory for Kokoro model
-RUN mkdir -p /tmp/.hermes
+# Create cache directories for Kokoro model and HuggingFace
+RUN mkdir -p /tmp/.hermes && \
+    mkdir -p /root/.cache/huggingface && \
+    mkdir -p /storage/playlist
+
+# Pre-download Kokoro model during build to avoid cold start timeout
+RUN python -c "from kokoro import KPipeline; print('Downloading Kokoro model...'); KPipeline(lang_code='a', device='cpu'); print('Model downloaded!')" || echo "Model download deferred to runtime"
 
 # Expose port (HuggingFace will handle this)
 EXPOSE 7860
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+# Health check with extended start period for model loading
+HEALTHCHECK --interval=30s --timeout=30s --start-period=180s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:7860/api', timeout=5)" || exit 1
 
 # Run the application
